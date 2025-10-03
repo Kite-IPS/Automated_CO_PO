@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-export const verifyEmail = async (toEmail, token) => {
+export const verifyEmail = async (toEmail, otp) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "Gmail",
@@ -14,14 +14,19 @@ export const verifyEmail = async (toEmail, token) => {
       },
     });
 
-    const url = `${process.env.BASE_URL}/verify-email?token=${token}`;
+    const verificationUrl = `${process.env.BASE_URL}/verify-email`;
 
     const mailOptions = {
       from: process.env.EMAIL,
       to: toEmail,
       subject: "Email Verification For the Automated CO-PO Mapping System",
-      html: `<p>Please click the link to verify your email:</p>
-        <a href="${url}" style="color: blue; text-decoration: underline;">Click Here</a>`,
+      html: `
+        <p>Your OTP for email verification is: <strong>${otp}</strong></p>
+        <p>This OTP will expire in 5 minutes.</p>
+        <p>Please visit the following link and enter your OTP:</p>
+        <p style="color: blue;">${verificationUrl}</p>
+        <p>If you did not request this verification, please ignore this email.</p>
+      `,
     };
 
     await transporter.sendMail(mailOptions);

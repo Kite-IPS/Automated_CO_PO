@@ -6,10 +6,14 @@ const emailVerificationSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    token: {
+    otp: {
         type: String,
         required: true
-    },    
+    },
+    isUsed: {
+        type: Boolean,
+        default: false
+    },
     expiresAt: {
         type: Date,
         required: true

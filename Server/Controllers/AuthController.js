@@ -61,26 +61,24 @@ export const register = async (req, res) => {
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
 
-    // Fix: Add await here
     const user = await User.create({
       username,
       email,
       password: hashedPassword,
     });
 
-    const token = Math.random().toString(36).substring(2);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
 
-    // Fix: Add await here
-    const emailVerification = await EmailVerification.create({
+    await EmailVerification.create({
       userId: user._id,
-      token,
-      expiresAt: new Date(Date.now() + 3600000),
+      otp,
+      expiresAt: new Date(Date.now() + 300000), // 5 minutes expiry
     });
 
-    // Send verification email
-    await verifyEmail(email, token);
+    // Send verification email with OTP
+    await verifyEmail(email, otp);
 
-    return res.status(201).json({ message: "User registered successfully" });
+    return res.status(201).json({ message: "User registered successfully. Please check your email for OTP verification." });
   } catch (error) {
     console.log("Error in Register Controller", error);
     return res
@@ -91,17 +89,40 @@ export const register = async (req, res) => {
 
 export const verifyEmailController = async (req, res) => {
   try {
-    const { token } = req.query;
+    const { email, otp } = req.body;
 
-    const record = await EmailVerification.findOne({ token });
-    if (!record) return res.status(400).json({ error: "Invalid token" });
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const record = await EmailVerification.findOne({ 
+      userId: user._id,
+      isUsed: false
+    }).sort({ createdAt: -1 });
+    
+    if (!record) {
+      return res.status(400).json({ error: "No verification record found" });
+    }
+
+    if (record.isUsed) {
+      return res.status(400).json({ error: "OTP has already been used" });
+    }
 
     if (record.expiresAt < new Date()) {
-      return res.status(400).json({ error: "Token expired" });
+      return res.status(400).json({ error: "OTP has expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
     }
 
     await User.findByIdAndUpdate(record.userId, { isEmailVerified: true });
-    await EmailVerification.deleteOne({ _id: record._id });
+    await EmailVerification.findByIdAndUpdate(record._id, { isUsed: true });
 
     res.json({ message: "Email verified successfully" });
   } catch (err) {
