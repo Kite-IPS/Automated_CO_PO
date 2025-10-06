@@ -1,13 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Dashboard from "./Pages/Dashboard";
+import AttainmentSheet from "./Pages/AttainmentSheet";
+import GenerateCOPO from "./Pages/GenerateCOPO";
 
 const App = () => {
   React.useEffect(() => {
-    // Remove the theme initialization from here as it's now handled in ThemeToggleButton
     const theme = localStorage.getItem('theme');
     if (theme === null) {
-      // If no theme is set, check system preference
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.classList.add('dark');
         localStorage.setItem('theme', 'dark');
@@ -15,7 +15,6 @@ const App = () => {
         localStorage.setItem('theme', 'light');
       }
     } else {
-      // Apply saved theme
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
       }
@@ -25,7 +24,9 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/dashboard" index element={<Dashboard/>} />
+        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/attainment-sheet" element={<AttainmentSheet/>}/>
+        <Route path="/generate-co-po" element={<GenerateCOPO/>} />
       </Routes>
     </Router>
   );
