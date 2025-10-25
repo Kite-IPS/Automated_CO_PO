@@ -12,9 +12,9 @@ const Login = () => {
   const [rememberMe, setRememberMe] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   
-  // OTP Modal States (shown after successful login)
+  // OTP Modal States - REVERSED ORDER
   const [showOtpModal, setShowOtpModal] = React.useState(false);
-  const [otpStep, setOtpStep] = React.useState(1); // 1: Generate OTP, 2: Verify OTP, 3: Success
+  const [otpStep, setOtpStep] = React.useState(1); // 1: Generate OTP (Username), 2: Verify Email (OTP), 3: Success
   const [otpUsername, setOtpUsername] = React.useState('');
   const [otpEmail, setOtpEmail] = React.useState('');
   const [otp, setOtp] = React.useState('');
@@ -37,7 +37,7 @@ const Login = () => {
         setTempToken(res.data.token);
         setOtpEmail(email); // Pre-fill email from login
         setShowOtpModal(true);
-        setOtpStep(1); // Start with OTP generation step
+        setOtpStep(1); // Start with username input for OTP generation
         setLoading(false);
       } else {
         setError(res?.data?.message || 'Login failed');
@@ -49,7 +49,7 @@ const Login = () => {
     }
   };
 
-  // Step 2: Generate OTP
+  // Step 2: Generate OTP (After getting username)
   const handleGenerateOtp = async () => {
     setOtpMessage(null);
     if (!otpUsername || !otpEmail) {
@@ -71,7 +71,7 @@ const Login = () => {
       
       setOtpMessage({ type: 'success', text: res.data.message || 'OTP sent to your email successfully!' });
       
-      // Move to OTP verification step
+      // Move to email verification step (OTP input)
       setTimeout(() => {
         setOtpStep(2);
         setOtpMessage(null);
@@ -93,8 +93,8 @@ const Login = () => {
     }
   };
 
-  // Step 3: Verify OTP
-  const handleVerifyOtp = async () => {
+  // Step 3: Verify Email with OTP
+  const handleVerifyEmail = async () => {
     setOtpMessage(null);
     if (!otp || otp.length !== 6) {
       setOtpMessage({ type: 'error', text: 'Please enter a valid 6-digit OTP code.' });
@@ -114,8 +114,8 @@ const Login = () => {
         otp 
       });
       
-      // OTP verified successfully - show success message
-      setOtpMessage({ type: 'success', text: res.data.message || 'OTP verified successfully!' });
+      // Email verified successfully - show success message
+      setOtpMessage({ type: 'success', text: res.data.message || 'Email verified successfully!' });
       setOtpStep(3); // Move to success step
       
       // Store the token and redirect to dashboard after showing success
@@ -124,7 +124,7 @@ const Login = () => {
         navigate('/dashboard');
       }, 2000);
     } catch (err) {
-      const text = err?.response?.data?.error || err?.response?.data?.message || err.message || 'OTP verification failed';
+      const text = err?.response?.data?.error || err?.response?.data?.message || err.message || 'Email verification failed';
       setOtpMessage({ type: 'error', text });
     } finally {
       setOtpVerifyLoading(false);
@@ -353,7 +353,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* OTP Modal (Shown AFTER Login) */}
+      {/* Two-Factor Authentication Modal - REVERSED ORDER */}
       {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform animate-slideUp">
@@ -377,12 +377,12 @@ const Login = () => {
                   <div>
                     <h3 className="text-xl font-bold text-white">
                       {otpStep === 1 && 'Two-Factor Authentication'}
-                      {otpStep === 2 && 'Verify Your Identity'}
+                      {otpStep === 2 && 'Verify Your Email'}
                       {otpStep === 3 && 'Verification Successful!'}
                     </h3>
                     <p className={`text-sm ${otpStep === 3 ? 'text-green-100' : 'text-blue-100'}`}>
-                      {otpStep === 1 && 'Generate OTP to secure your account'}
-                      {otpStep === 2 && 'Enter the code sent to your email'}
+                      {otpStep === 1 && 'Enter username to generate OTP'}
+                      {otpStep === 2 && 'Enter the OTP sent to your email'}
                       {otpStep === 3 && 'Redirecting to dashboard...'}
                     </p>
                   </div>
@@ -424,17 +424,17 @@ const Login = () => {
                 </div>
               )}
 
-              {/* Step 1: Generate OTP */}
+              {/* STEP 1: Enter Username to Generate OTP */}
               {otpStep === 1 && (
                 <div className="space-y-5">
                   <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-2">Generate OTP Code</h4>
-                    <p className="text-sm text-gray-600">Enter your details to receive a verification code</p>
+                    <p className="text-sm text-gray-600">Enter your username to receive verification code</p>
                   </div>
 
                   {/* Username Field */}
@@ -460,7 +460,7 @@ const Login = () => {
                     </div>
                   </div>
 
-                  {/* Email Field (Pre-filled) */}
+                  {/* Email Field (Pre-filled, Read-only) */}
                   <div>
                     <label htmlFor="otp-email" className="block text-sm font-semibold text-gray-700 mb-2">
                       Email Address
@@ -481,10 +481,10 @@ const Login = () => {
                     </div>
                   </div>
 
-                  {/* Generate Button */}
+                  {/* Generate OTP Button */}
                   <button
                     onClick={handleGenerateOtp}
-                    disabled={otpLoading}
+                    disabled={otpLoading || !otpUsername}
                     className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                   >
                     {otpLoading ? (
@@ -507,17 +507,17 @@ const Login = () => {
                 </div>
               )}
 
-              {/* Step 2: Verify OTP */}
+              {/* STEP 2: Verify Email with OTP */}
               {otpStep === 2 && (
                 <div className="space-y-5">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Enter Verification Code</h4>
-                    <p className="text-sm text-gray-600">We've sent a 6-digit code to <span className="font-semibold text-gray-900">{otpEmail}</span></p>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Verify Email Address</h4>
+                    <p className="text-sm text-gray-600">Enter the 6-digit code sent to <span className="font-semibold text-gray-900">{otpEmail}</span></p>
                   </div>
 
                   {/* OTP Input */}
@@ -537,7 +537,7 @@ const Login = () => {
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         maxLength={6}
-                        className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 text-center text-xl font-semibold tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                        className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 text-center text-xl font-semibold tracking-widest focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                         placeholder="000000"
                         autoFocus
                       />
@@ -547,7 +547,7 @@ const Login = () => {
                   {/* Action Buttons */}
                   <div className="space-y-3">
                     <button
-                      onClick={handleVerifyOtp}
+                      onClick={handleVerifyEmail}
                       disabled={otpVerifyLoading || otp.length !== 6}
                       className="w-full py-3.5 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                     >
@@ -562,9 +562,9 @@ const Login = () => {
                       ) : (
                         <>
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span>Verify & Continue</span>
+                          <span>Verify Email</span>
                         </>
                       )}
                     </button>
@@ -582,7 +582,7 @@ const Login = () => {
                 </div>
               )}
 
-              {/* Step 3: Success Message */}
+              {/* STEP 3: Success Message */}
               {otpStep === 3 && (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
@@ -590,7 +590,7 @@ const Login = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-3">OTP Verified Successfully!</h4>
+                  <h4 className="text-2xl font-bold text-gray-900 mb-3">Email Verified Successfully!</h4>
                   <p className="text-gray-600 mb-6">Your account has been authenticated securely.</p>
                   <div className="flex items-center justify-center gap-2 text-blue-600">
                     <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -609,7 +609,10 @@ const Login = () => {
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <p className="text-sm text-blue-800 leading-relaxed">
-                    OTP codes are valid for 10 minutes and can only be used once. Never share your OTP with anyone.
+                    {otpStep === 1 
+                      ? 'Enter your username to generate an OTP code. The code will be sent to your email address.'
+                      : 'OTP codes are valid for 10 minutes and can only be used once. Never share your OTP with anyone.'
+                    }
                   </p>
                 </div>
               )}
